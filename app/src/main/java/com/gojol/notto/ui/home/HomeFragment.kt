@@ -1,6 +1,7 @@
 package com.gojol.notto.ui.home
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,6 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.*
 
 @AndroidEntryPoint
 class HomeFragment : Fragment() {
@@ -24,6 +26,7 @@ class HomeFragment : Fragment() {
 
     private val homeViewModel: HomeViewModel by viewModels()
     private val calendarAdapter = CalendarAdapter("2021년 11월 2일")
+    private val customCalendarAdapter = CustomCalendarAdapter()
     private val labelAdapter = LabelAdapter()
     private val labelWrapperAdapter = LabelWrapperAdapter(labelAdapter)
     private val todoAdapter = TodoAdapter()
@@ -32,7 +35,7 @@ class HomeFragment : Fragment() {
         val config = ConcatAdapter.Config.Builder().apply {
             setIsolateViewTypes(false)
         }.build()
-        ConcatAdapter(config, calendarAdapter, labelWrapperAdapter, todoAdapter)
+        ConcatAdapter(config, customCalendarAdapter, labelWrapperAdapter, todoAdapter)
     }
 
     override fun onCreateView(
@@ -55,7 +58,7 @@ class HomeFragment : Fragment() {
         layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
             override fun getSpanSize(position: Int): Int {
                 return when (concatAdapter.getItemViewType(position)) {
-                    CalendarAdapter.VIEW_TYPE -> 7
+                    CustomCalendarAdapter.VIEW_TYPE -> 1
                     LabelAdapter.VIEW_TYPE -> 1
                     TodoAdapter.VIEW_TYPE -> 7
                     else -> 7
@@ -68,6 +71,12 @@ class HomeFragment : Fragment() {
         homeViewModel.date.observe(viewLifecycleOwner, {
             calendarAdapter.setDate(it)
         })
+
+        val date =
+            listOf("일", "월", "화", "수", "목", "금", "토") + (1..31).toList().map { it.toString() }
+        val today = Calendar.getInstance().get(Calendar.DATE).toString()
+        val checkDate = date.map { DateWithFocus(it, Random().nextInt(5), it == today) }
+        customCalendarAdapter.submitList(checkDate)
 
         homeViewModel.todoList.observe(viewLifecycleOwner, {
             todoAdapter.submitList(it)
